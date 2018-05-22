@@ -1,5 +1,6 @@
 #!/bin/bash
-set -x
+# set -x
+set -e
 
 # quickstart.sh
 # Create cluster and install istio and helm to prepare for the k8s workshop walk through
@@ -42,15 +43,21 @@ wget https://storage.googleapis.com/kubernetes-helm/helm-v2.9.1-linux-amd64.tar.
 tar zxfv helm-v2.9.1-linux-amd64.tar.gz
 cp linux-amd64/helm /usr/local/bin
 
+
 kubectl -n kube-system create sa tiller
 kubectl create clusterrolebinding tiller --clusterrole cluster-admin --serviceaccount=kube-system:tiller
-helm init --upgrade --service-account tiller
-
+linux-amd64/helm init --upgrade --service-account tiller
+echo -n "Waiting on helm"
+while true; do
+    echo -n "."
+    kubectl get pods -n kube-system |grep Running| grep tiller > /dev/null && break
+done
 # Install Istio in cloudshell
 curl -L https://git.io/getLatestIstio | sh -
 
+
 # Install Istio in cluster and enable all features
-helm install \
+linux-amd64/helm install \
     istio istio-$ISTIO_VERSION/install/kubernetes/helm/istio \
     --set mtls.enabled=true \
     --set sidecar-injector.enabled=true \
@@ -60,5 +67,5 @@ helm install \
     --namespace istio-system
 
 echo =============================================== 
-echo "export PATH=$PWD/istio-$ISTIO_VERSION/bin:$PATH"
+echo "export PATH=$PWD/linux-amd64/helm:$PWD/istio-$ISTIO_VERSION/bin:$PATH"
 echo ===============================================
