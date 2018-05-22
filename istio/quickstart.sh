@@ -37,37 +37,24 @@ gcloud beta container \
 
 # Configure kubectl to connect to this cluster
 gcloud container clusters get-credentials $CLUSTER_NAME --zone $GCP_ZONE --project $GOOGLE_CLOUD_PROJECT
-
-# Install and configure Helm. This is required to install Istio.
-wget https://storage.googleapis.com/kubernetes-helm/helm-v2.9.1-linux-amd64.tar.gz
-tar zxfv helm-v2.9.1-linux-amd64.tar.gz
-chmod +x linux-amd64/helm
-
-kubectl -n kube-system create sa tiller
-kubectl create clusterrolebinding tiller --clusterrole cluster-admin --serviceaccount=kube-system:tiller
-linux-amd64/helm init --upgrade --service-account tiller
-echo -n "Waiting on helm. "
-while true; do
-    echo -n "."
-    kubectl get pods -n kube-system |grep Running| grep tiller > /dev/null && break
-done
-echo 
+kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=$(gcloud config get-value core/account)
 
 # Install Istio in cloudshell
 curl -L https://git.io/getLatestIstio | sh -
 
+# Install Istio into cluster
+kubectl apply -f istio-$ISTIO_VERSION/install/kubernetes/istio-auth.yaml
 
-# Install Istio in cluster and enable all features
-linux-amd64/helm install \
-    istio istio-$ISTIO_VERSION/install/kubernetes/helm/istio \
-    --set mtls.enabled=true \
-    --set sidecar-injector.enabled=true \
-    --set prometheus.enabled=true \
-    --set servicegraph.enabled=true \
-    --set zipkin.enabled=true \
-    --namespace istio-system
+# Install Sidecar Injector
+istio-$ISTIO_VERSION/install/kubernetes/webhook-create-signed-cert.sh \
+    --service istio-sidecar-injector \
+    --namespace istio-system \
+    --secret sidecar-injector-certs
 
-echo =============================================== 
-echo 'export PATH="$PWD/linux-amd64:$PATH"'
-echo 'export PATH="$PWD/istio-$ISTIO_VERSION/bin:$PATH"'
-echo ===============================================
+kubectl apply -f istio-$ISTIO_VERSION/install/kubernetes/istio-sidecar-injector-configmap-release.yaml
+
+cat istio-$ISTIO_VERSION/install/kubernetes/istio-sidecar-injector.yaml | \
+     istio-$ISTIO_VERSION/install/kubernetes/webhook-patch-ca-bundle.sh > \
+     istio-$ISTIO_VERSION/install/kubernetes/istio-sidecar-injector-with-ca-bundle.yaml
+
+kubectl apply -f istio-$ISTIO_VERSION/install/kubernetes/istio-sidecar-injector-with-ca-bundle.yaml
