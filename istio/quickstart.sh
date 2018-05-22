@@ -1,4 +1,5 @@
 #!/bin/bash
+set -x
 
 # quickstart.sh
 # Create cluster and install istio and helm to prepare for the k8s workshop walk through
@@ -14,7 +15,7 @@ cd $HOME
 # Create cluster
 gcloud beta container \
     --project $GOOGLE_CLOUD_PROJECT \
-    clusters create $NAME \
+    clusters create $CLUSTER_NAME \
     --zone $GKE_ZONE \
     --no-enable-basic-auth \
     --cluster-version $KUBERNETES_VERSION \
@@ -38,6 +39,9 @@ gcloud container clusters get-credentials $CLUSTER_NAME --zone $GCP_ZONE --proje
 
 # Install and configure Helm. This is required to install Istio.
 wget https://storage.googleapis.com/kubernetes-helm/helm-v2.9.1-linux-amd64.tar.gz
+tar zxfv helm-v2.9.1-linux-amd64.tar.gz
+cp linux-amd64/helm /usr/local/bin
+
 kubectl -n kube-system create sa tiller
 kubectl create clusterrolebinding tiller --clusterrole cluster-admin --serviceaccount=kube-system:tiller
 helm init --upgrade --service-account tiller
