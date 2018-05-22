@@ -9,6 +9,8 @@ NETWORK="default"
 CLUSTER_NAME="istio-demo"
 ISTIO_VERSION="0.7.1"
 
+cd $HOME
+
 # Create cluster
 gcloud beta container \
     --project $GOOGLE_CLOUD_PROJECT \
