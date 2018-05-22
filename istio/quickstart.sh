@@ -6,9 +6,9 @@ set -e
 # Create cluster and install istio and helm to prepare for the k8s workshop walk through
 
 KUBERNETES_VERSION="1.10.2-gke.1"
-GKE_ZONE="us-west1-b"
+GCP_ZONE="us-west1-b"
 NETWORK="default"
-CLUSTER_NAME="istio-demo"
+CLUSTER_NAME="istio-demo-$(date '+%s')"
 ISTIO_VERSION="0.7.1"
 
 cd $HOME
@@ -17,7 +17,7 @@ cd $HOME
 gcloud beta container \
     --project $GOOGLE_CLOUD_PROJECT \
     clusters create $CLUSTER_NAME \
-    --zone $GKE_ZONE \
+    --zone $GCP_ZONE \
     --no-enable-basic-auth \
     --cluster-version $KUBERNETES_VERSION \
     --machine-type "n1-standard-1" \
@@ -41,17 +41,18 @@ gcloud container clusters get-credentials $CLUSTER_NAME --zone $GCP_ZONE --proje
 # Install and configure Helm. This is required to install Istio.
 wget https://storage.googleapis.com/kubernetes-helm/helm-v2.9.1-linux-amd64.tar.gz
 tar zxfv helm-v2.9.1-linux-amd64.tar.gz
-cp linux-amd64/helm /usr/local/bin
-
+chmod +x linux-amd64/helm
 
 kubectl -n kube-system create sa tiller
 kubectl create clusterrolebinding tiller --clusterrole cluster-admin --serviceaccount=kube-system:tiller
 linux-amd64/helm init --upgrade --service-account tiller
-echo -n "Waiting on helm"
+echo -n "Waiting on helm. "
 while true; do
     echo -n "."
     kubectl get pods -n kube-system |grep Running| grep tiller > /dev/null && break
 done
+echo 
+
 # Install Istio in cloudshell
 curl -L https://git.io/getLatestIstio | sh -
 
@@ -67,5 +68,6 @@ linux-amd64/helm install \
     --namespace istio-system
 
 echo =============================================== 
-echo "export PATH=$PWD/linux-amd64/helm:$PWD/istio-$ISTIO_VERSION/bin:$PATH"
+echo 'export PATH="$PWD/linux-amd64:$PATH"'
+echo 'export PATH="$PWD/istio-$ISTIO_VERSION/bin:$PATH"'
 echo ===============================================
