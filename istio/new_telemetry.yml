@@ -1,0 +1,20 @@
+# Configuration for metric instances
+apiVersion: "config.istio.io/v1alpha2"
+kind: metric
+metadata:
+  name: doublerequestcount
+  namespace: istio-system
+spec:
+  value: "2" # count each request twice
+  dimensions:
+    source: source.service | "unknown"
+    destination: destination.service | "unknown"
+    message: '"twice the fun!"'
+  monitored_resource_type: '"UNSPECIFIED"'
+---
+# Configuration for a Prometheus handler
+apiVersion: "config.istio.io/v1alpha2"
+kind: prometheus
+metadata:
+  name: doublehandler
+  namespace: istio-system

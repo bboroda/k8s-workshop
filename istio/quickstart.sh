@@ -38,6 +38,8 @@ gcloud beta container \
 
 # Configure kubectl to connect to this cluster
 gcloud container clusters get-credentials $CLUSTER_NAME --zone $GCP_ZONE --project $GOOGLE_CLOUD_PROJECT
+
+# Add role to your user
 kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=$(gcloud config get-value core/account)
 
 # Install Istio in cloudshell
@@ -61,9 +63,12 @@ cat istio-$ISTIO_VERSION/install/kubernetes/istio-sidecar-injector.yaml | \
 kubectl apply -f istio-$ISTIO_VERSION/install/kubernetes/istio-sidecar-injector-with-ca-bundle.yaml
 
 # Label namespace so the injection works
-kubectl creat namespace $APP_NAMESPACE
+kubectl create namespace $APP_NAMESPACE
 kubectl label namespace $APP_NAMESPACE istio-injection=enabled
 
+# Set $APP_NAMESPACE to current context
+kubectl config set-context $(kubectl config current-context) --namespace $APP_NAMESPACE
+
 # Deploy Bookinfo App
-kubectl apply -f samples/bookinfo/kube/bookinfo.yaml --namespace $APP_NAMESPACE
+kubectl apply -f istio-$ISTIO_VERSION/samples/bookinfo/kube/bookinfo.yaml --namespace $APP_NAMESPACE
 

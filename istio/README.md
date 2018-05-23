@@ -1,13 +1,14 @@
 
 
 # ReactiveOps Kubernetes Istio Workbook
-This assumes you already have a working Kubernetes cluster
+This assumes you already have a working Kubernetes cluster version 1.9 or higher
 
 ## Download and install Istio
 ```
-export ISTIO_VERSION=0.3.0
+export ISTIO_VERSION=0.7.1
 curl -L https://git.io/getLatestIstio | sh -
 export PATH=$PWD/istio-$ISTIO_VERSION/bin:$PATH
+cd istio-$ISTIO_VERSION/
 ```
 
 ## Once you have created your cluster, you need to make your user a cluster admin
@@ -15,39 +16,72 @@ export PATH=$PWD/istio-$ISTIO_VERSION/bin:$PATH
 kubectl create clusterrolebinding cluster-admin-binding --clusterrole=cluster-admin --user=$(gcloud config get-value core/account)
 ```
 
-## Configure Istio with TLS in your cluster
+## Configure Istio with MTLS in your cluster
 ```
-cd istio-0.3.0/
 kubectl apply -f install/kubernetes/istio-auth.yaml
 ```
-https://github.com/istio/istio/blob/master/install/kubernetes/istio-auth.yaml
+Example:
+https://github.com/reactiveops/k8s-workshop/blob/master/istio/examples/istio-auth.yaml
 
+```
+kubectl apply -f install/kubernetes/istio-auth.yaml
+```
+## Install Sidecar Injector
+```
+install/kubernetes/webhook-create-signed-cert.sh \
+    --service istio-sidecar-injector \
+    --namespace istio-system \
+    --secret sidecar-injector-certs
+
+kubectl apply -f install/kubernetes/istio-sidecar-injector-configmap-release.yaml
+
+cat istio-$ISTIO_VERSION/install/kubernetes/istio-sidecar-injector.yaml | \
+     istio-$ISTIO_VERSION/install/kubernetes/webhook-patch-ca-bundle.sh > \
+     istio-$ISTIO_VERSION/install/kubernetes/istio-sidecar-injector-with-ca-bundle.yaml
+
+kubectl apply -f install/kubernetes/istio-sidecar-injector-with-ca-bundle.yaml
+```
+
+##### Create and Label namespace so the injection works
+```
+kubectl create namespace bookinfo
+kubectl label namespace bookinfo istio-injection=enabled
+```
 
 ## Deploy Book Info Application
+
+##### Set context to use `bookinfo` namespace
+
+#### Apply bookinfo manifests
 ```
-kubectl apply -f <(istioctl kube-inject -f samples/bookinfo/kube/bookinfo.yaml)
+kubectl apply -f samples/bookinfo/kube/bookinfo.yaml
 ```
 https://github.com/istio/istio/blob/master/samples/bookinfo/kube/bookinfo.yaml
 
-```
+## ** Quickstart ends here **
 
-### Verify TLS
+### Verify MTLS
 ```
 kubectl get configmap istio -o yaml -n istio-system | grep authPolicy | head -1
 ```
-Get product Pod name
+##### Get product Pod name
 ```
-kubectl exec -it <productpage_pod> -c istio-proxy /bin/bash
+PRODUCTPAGEPOD=$(kubectl get pods --selector=app=productpage -o=jsonpath='{.items[*].metadata.name}')
+kubectl exec -it $PRODUCTPAGEPOD -c istio-proxy /bin/bash
 ```
-In the container: 
+##### In the container: 
 ```
 curl https://details:9080/details/0 -v --key /etc/certs/key.pem --cert /etc/certs/cert-chain.pem --cacert /etc/certs/root-cert.pem -k
 ```
+If the request works then we know the certs are being used and inter pod traffic is encrypted
 
-Find LB ip address
+#### Find LB ip address
 ```
 kubectl get services --all-namespaces
+kubectl get ingress
+```
 
+## Dynamic Routing with Istio
 ### Route all traffic to V1 of Book Info Reviews Service
 
 ```
@@ -69,22 +103,23 @@ https://github.com/istio/istio/blob/master/samples/bookinfo/kube/route-rule-revi
 
 ## Mixer Telemetry and Prometheus
 
-Add Prometheus
+#### Add Prometheus
 ```
 kubectl apply -f install/kubernetes/addons/prometheus.yaml
 ```
 
-Add Telemetry spec for Mixer and Prometheus
+#### Add Telemetry spec for Mixer and Prometheus
 ```
 kubectl apply -f https://raw.githubusercontent.com/reactiveops/k8s-workshop/master/istio/new_telemetry.yml
 ```
-Get Prometheus pod
+#### Get Prometheus pod
 ```
 kubectl get pod -n istio-system | grep prometheus
 ```
-View Prometheus Dashboard
+#### View Prometheus Dashboard
 ```
-kubectl -n istio-system port-forward <prometheus_pod> 8080:9090
+PROMETHEUSPOD=$(kubectl get pods -n istio-system --selector=app=prometheus -o jsonpath='{.items[*].metadata.name}')
+kubectl -n istio-system port-forward $PROMETHEUSPOD 8080:9090
 ```
 
 ## Istio Dashboard in Grafana
@@ -92,13 +127,10 @@ kubectl -n istio-system port-forward <prometheus_pod> 8080:9090
 ```
 kubectl apply -f install/kubernetes/addons/grafana.yaml
 ```
-Get Grafana pod
+### Get Grafana pod
 ```
-kubectl get pod -n istio-system | grep grafana
-```
-
-```
-kubectl -n istio-system port-forward grafana-2369932619-qmhlt 8080:3000
+GRAFANAPOD=$(kubectl get pods -n istio-system --selector=app=grafana -o jsonpath='{.items[*].metadata.name}')
+kubectl -n istio-system port-forward $GRAFANAPOD 8080:3000
 ```
 
 # Istio Docs: 
