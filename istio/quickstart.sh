@@ -8,6 +8,7 @@ set -e
 KUBERNETES_VERSION="1.9.7-gke.1"
 GCP_ZONE="us-west1-b"
 NETWORK="default"
+APP_NAMESPACE="bookinfo"
 CLUSTER_NAME="istio-demo-$(date '+%s')"
 export ISTIO_VERSION="0.7.1"
 
@@ -58,3 +59,11 @@ cat istio-$ISTIO_VERSION/install/kubernetes/istio-sidecar-injector.yaml | \
      istio-$ISTIO_VERSION/install/kubernetes/istio-sidecar-injector-with-ca-bundle.yaml
 
 kubectl apply -f istio-$ISTIO_VERSION/install/kubernetes/istio-sidecar-injector-with-ca-bundle.yaml
+
+# Label namespace so the injection works
+kubectl creat namespace $APP_NAMESPACE
+kubectl label namespace $APP_NAMESPACE istio-injection=enabled
+
+# Deploy Bookinfo App
+kubectl apply -f samples/bookinfo/kube/bookinfo.yaml --namespace $APP_NAMESPACE
+
