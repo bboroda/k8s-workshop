@@ -5,11 +5,11 @@ set -e
 # quickstart.sh
 # Create cluster and install istio and helm to prepare for the k8s workshop walk through
 
-KUBERNETES_VERSION="1.10.2-gke.1"
+KUBERNETES_VERSION="1.9.7-gke.1"
 GCP_ZONE="us-west1-b"
 NETWORK="default"
 CLUSTER_NAME="istio-demo-$(date '+%s')"
-ISTIO_VERSION="0.7.1"
+export ISTIO_VERSION="0.7.1"
 
 cd $HOME
 
