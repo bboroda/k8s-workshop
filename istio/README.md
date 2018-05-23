@@ -33,7 +33,7 @@ install/kubernetes/webhook-create-signed-cert.sh \
     --namespace istio-system \
     --secret sidecar-injector-certs
 
-kubectl apply -f install/kubernetes/istio-sidecar-injector-configmap-release.yaml
+kubectl apply -f install/kubernetes/istio-sidecar-injector-configmap-debug.yaml
 
 cat istio-$ISTIO_VERSION/install/kubernetes/istio-sidecar-injector.yaml | \
      istio-$ISTIO_VERSION/install/kubernetes/webhook-patch-ca-bundle.sh > \
@@ -64,12 +64,13 @@ https://github.com/istio/istio/blob/master/samples/bookinfo/kube/bookinfo.yaml
 ```
 kubectl get configmap istio -o yaml -n istio-system | grep authPolicy | head -1
 ```
-##### Get product Pod name
+##### Exec into sidecar container in product page pod
 ```
 PRODUCTPAGEPOD=$(kubectl get pods --selector=app=productpage -o=jsonpath='{.items[*].metadata.name}')
 kubectl exec -it $PRODUCTPAGEPOD -c istio-proxy /bin/bash
 ```
-##### In the container: 
+##### Curl using cert
+This is only available when istio injector is configured in debug mode
 ```
 curl https://details:9080/details/0 -v --key /etc/certs/key.pem --cert /etc/certs/cert-chain.pem --cacert /etc/certs/root-cert.pem -k
 ```

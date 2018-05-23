@@ -54,7 +54,7 @@ istio-$ISTIO_VERSION/install/kubernetes/webhook-create-signed-cert.sh \
     --namespace istio-system \
     --secret sidecar-injector-certs
 
-kubectl apply -f istio-$ISTIO_VERSION/install/kubernetes/istio-sidecar-injector-configmap-release.yaml
+kubectl apply -f istio-$ISTIO_VERSION/install/kubernetes/istio-sidecar-injector-configmap-debug.yaml
 
 cat istio-$ISTIO_VERSION/install/kubernetes/istio-sidecar-injector.yaml | \
      istio-$ISTIO_VERSION/install/kubernetes/webhook-patch-ca-bundle.sh > \
@@ -72,3 +72,5 @@ kubectl config set-context $(kubectl config current-context) --namespace $APP_NA
 # Deploy Bookinfo App
 kubectl apply -f istio-$ISTIO_VERSION/samples/bookinfo/kube/bookinfo.yaml --namespace $APP_NAMESPACE
 
+# Use istioctl version to get the debug version
+# kubectl apply --namespace $APP_NAMESPACE -f <(istioctl kube-inject --debug -f samples/bookinfo/kube/bookinfo.yaml)
