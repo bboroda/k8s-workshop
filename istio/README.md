@@ -56,7 +56,7 @@ kubectl label namespace bookinfo istio-injection=enabled
 ```
 kubectl apply -f samples/bookinfo/kube/bookinfo.yaml
 ```
-https://github.com/istio/istio/blob/master/samples/bookinfo/kube/bookinfo.yaml
+https://github.com/istio/istio/blob/0.7.1/samples/bookinfo/kube/bookinfo.yaml
 
 ## ** Quickstart ends here **
 
@@ -88,19 +88,19 @@ kubectl get ingress
 ```
 kubectl apply -f samples/bookinfo/kube/route-rule-all-v1.yaml
 ```
-https://github.com/istio/istio/blob/master/samples/bookinfo/kube/route-rule-all-v1.yaml
+https://github.com/istio/istio/blob/0.7.1/samples/bookinfo/kube/route-rule-all-v1.yaml
 
 ### Content based routing for V2 of the Book Info Reviews Service
 ```
 kubectl apply -f samples/bookinfo/kube/route-rule-reviews-test-v2.yaml
 ```
-https://github.com/istio/istio/blob/master/samples/bookinfo/kube/route-rule-reviews-test-v2.yaml
+https://github.com/istio/istio/blob/0.7.1/samples/bookinfo/kube/route-rule-reviews-test-v2.yaml
 
 ### AB Test V2 and V3 of Book Info Reviews Service
 ```
 kubectl apply -f samples/bookinfo/kube/route-rule-reviews-v2-v3.yaml
 ```
-https://github.com/istio/istio/blob/master/samples/bookinfo/kube/route-rule-reviews-v2-v3.yaml
+https://github.com/istio/istio/blob/0.7.1/samples/bookinfo/kube/route-rule-reviews-v2-v3.yaml
 
 ## Mixer Telemetry and Prometheus
 
